@@ -9,8 +9,8 @@ from utilities import ChatRoomSettings
 # AF_INET: address domain of socket
 # SOCK_STREAM: type of socket, data read in continuous stream
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-if len(sys.argv) < 4:
-    raise Exception(ChatRoomSettings.ARGS_EXCEPTION.value)
+if len(sys.argv) != 4:
+    raise Exception('script requires arguments for IP address, port number, and username')
 
 # Credentials to initiate handshake
 ip_address = sys.argv[1]

@@ -10,8 +10,8 @@ from utilities import ChatRoomSettings
 # SOCK_STREAM: type of socket, data read in continuous stream
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-if len(sys.argv) < 3:
-    raise Exception(ChatRoomSettings.ARGS_EXCEPTION.value)
+if len(sys.argv) != 3:
+    raise Exception('script requires arguments for IP address and port number')
 
 ip_address = sys.argv[1]
 port_num = int(sys.argv[2])
