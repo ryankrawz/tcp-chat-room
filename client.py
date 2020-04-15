@@ -29,7 +29,7 @@ def get_chat_data_json(client_message):
         'message': '',
     }
     if client_message == '*':
-        chat_data['query_users'] = True
+        chat_data['is_query'] = True
     elif client_message[0] == '@':
         private_user_handle, private_message = client_message.split(' ', 1)
         chat_data['private_user'] = private_user_handle[1:]
@@ -46,7 +46,7 @@ while True:
     try:
         server.send(username.encode(ChatRoomSettings.ENCODING.value))
         break
-    except InterruptedError:
+    except OSError:
         continue
 
 # Listen for message from server or input from console
@@ -69,5 +69,5 @@ while True:
             try:
                 json_to_send = get_chat_data_json(message)
                 server.send(json_to_send.encode(ChatRoomSettings.ENCODING.value))
-            except InterruptedError:
+            except OSError:
                 continue

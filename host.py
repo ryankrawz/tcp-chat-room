@@ -1,7 +1,7 @@
 import json
 import socket
 import sys
-from threading import enumerate, Thread
+from threading import Thread
 
 from utilities import ChatRoomSettings
 
@@ -15,12 +15,14 @@ if len(sys.argv) < 3:
 
 ip_address = sys.argv[1]
 port_num = int(sys.argv[2])
-# Bind server to provided IP address and port number, client must have same information to initiate handshake
+# Binds server to provided IP address and port number, client must have same information to initiate handshake
 server.bind((ip_address, port_num))
 # Listens for a specified number of server connections
 server.listen(ChatRoomSettings.MAX_CONNECTIONS.value)
 # Dictionary of all active clients in chat room mapping username to client server connection
 active_clients = dict()
+# Flag to terminate all threads once host server connection is closed
+stop_threads = False
 
 
 # Initializes parallel process for receiving data from and sending data to specific client server
@@ -28,6 +30,9 @@ def client_thread(name):
     connection = active_clients[name]
     connection.send('Welcome to the chat!'.encode(ChatRoomSettings.ENCODING.value))
     while True:
+        # Connection to host has been severed
+        if stop_threads or name not in active_clients:
+            break
         try:
             chat_data = get_chat_data(name)
             if chat_data:
@@ -54,7 +59,7 @@ def client_thread(name):
                 else:
                     broadcast(chat_data['message'].encode(ChatRoomSettings.ENCODING.value), name)
                     print(chat_data['message'])
-        except InterruptedError:
+        except OSError:
             continue
 
 
@@ -64,8 +69,7 @@ def broadcast(message, name):
         if client_username != name:
             try:
                 active_clients[client_username].send(message)
-            except InterruptedError:
-                active_clients[client_username].close()
+            except OSError:
                 remove(client_username)
 
 
@@ -92,7 +96,7 @@ def get_username_from_client(connection):
     while True:
         try:
             return connection.recv(ChatRoomSettings.MESSAGE_LENGTH.value).decode(ChatRoomSettings.ENCODING.value)
-        except InterruptedError:
+        except OSError:
             continue
 
 
@@ -100,6 +104,7 @@ def get_username_from_client(connection):
 def remove(name):
     active_clients[name].close()
     del active_clients[name]
+    print('{} has left the chat'.format(name))
 
 
 try:
@@ -108,14 +113,13 @@ try:
         user_connection, user_address = server.accept()
         username = get_username_from_client(user_connection)
         active_clients[username] = user_connection
-        new_client_thread = Thread(target=client_thread, args=username)
+        new_client_thread = Thread(target=client_thread, args=(username,))
         new_client_thread.start()
-        print('{} has now connected'.format(username))
+        print('{} has entered the chat'.format(username))
 except KeyboardInterrupt:
-    for info in active_clients:
-        info[0].close()
-    for thread in enumerate():
-        thread.join()
+    # Kill signal from host to close chat
+    for username in active_clients:
+        active_clients[username].close()
+    stop_threads = True
     server.close()
-    print('Chat closed\n')
-    sys.exit()
+    print('\nChat closed\n')
