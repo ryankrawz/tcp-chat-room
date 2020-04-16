@@ -49,25 +49,30 @@ while True:
     except OSError:
         continue
 
-# Listen for message from server or input from console
-while True:
-    sockets_list = [sys.stdin, server]
-    read_sockets, write_socket, error_socket = select.select(sockets_list, [], [])
-    for socks in read_sockets:
-        # Message from server
-        if socks == server:
-            message = socks.recv(ChatRoomSettings.MESSAGE_LENGTH.value)
-            if message:
-                print(message.decode(ChatRoomSettings.ENCODING.value))
+try:
+    # Listen for message from server or input from console
+    while True:
+        sockets_list = [sys.stdin, server]
+        read_sockets, write_socket, error_socket = select.select(sockets_list, [], [])
+        for socks in read_sockets:
+            # Message from server
+            if socks == server:
+                message = socks.recv(ChatRoomSettings.MESSAGE_LENGTH.value)
+                if message:
+                    print(message.decode(ChatRoomSettings.ENCODING.value))
+                else:
+                    print('Sorry, this chat is no longer open\n')
+                    server.close()
+                    sys.exit()
+            # Input from console
             else:
-                print('Sorry, this chat is no longer open\n')
-                server.close()
-                sys.exit()
-        # Input from console
-        else:
-            message = sys.stdin.readline().strip()
-            try:
-                json_to_send = get_chat_data_json(message)
-                server.send(json_to_send.encode(ChatRoomSettings.ENCODING.value))
-            except OSError:
-                continue
+                message = sys.stdin.readline().strip()
+                try:
+                    json_to_send = get_chat_data_json(message)
+                    server.send(json_to_send.encode(ChatRoomSettings.ENCODING.value))
+                except OSError:
+                    continue
+except KeyboardInterrupt:
+    # Kill signal from client to sever connection
+    server.close()
+    print('\nYou left the chat\n')

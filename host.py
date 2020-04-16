@@ -104,7 +104,7 @@ def get_username_from_client(connection):
 def remove(name):
     active_clients[name].close()
     del active_clients[name]
-    print('{} has left the chat'.format(name))
+    print('{} left the chat'.format(name))
 
 
 try:
@@ -115,7 +115,7 @@ try:
         active_clients[username] = user_connection
         new_client_thread = Thread(target=client_thread, args=(username,))
         new_client_thread.start()
-        print('{} has entered the chat'.format(username))
+        print('{} entered the chat'.format(username))
 except KeyboardInterrupt:
     # Kill signal from host to close chat
     for username in active_clients:
